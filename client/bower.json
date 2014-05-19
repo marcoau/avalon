@@ -1,0 +1,29 @@
+{
+  "name": "avalon",
+  "version": "0.0.0",
+  "homepage": "https://github.com/marcoau/avalon",
+  "authors": [
+    "Marco Au <marco.au.321@gmail.com>"
+  ],
+  "description": "Multiplayer online strategy game, built with MEAN stack",
+  "keywords": [
+    "avalon",
+    "strategy",
+    "game"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.1",
+    "angular": "~1.2.16",
+    "angular-route": "~1.2.16",
+    "angular-cookies": "~1.2.16"
+  }
+}
