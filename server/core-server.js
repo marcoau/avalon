@@ -4,7 +4,8 @@ var http = require('http')
 , path = require('path')
 , express = require('express')
 , jade = require('jade')
-// , utils = require('/utilities/utils.js').utils
+, _ = require('underscore')
+, utils = require('./utils').utils
 , app = express()
 , server = http.createServer(app)
 , io = require('socket.io').listen(server);
@@ -20,40 +21,102 @@ app.use(function(req, res, next){
   next();
 });
 
-app.get('/', function(req, res){
-  var url = path.normalize(__dirname + '/../client/index.html');
-  console.log(url);
-  fs.readFile(url, function(err, data){
-    console.log(data);
-    res.send(200, data);
-  });
-  // res.redirect('/../client/index.html');
-});
-
-app.get('/lobby', function(req, res){
-  var url = path.normalize(__dirname + '/../client/lobby.html');
-  console.log(url);
-  fs.readFile(url, function(err, data){
-    console.log(data);
-    res.send(200, data);
-  });
-  // res.redirect('/../client/index.html');
-});
-
-app.get('/login', function(req, res){
-  var url = path.normalize(__dirname + '/../client/login.html');
-  console.log(url);
-  fs.readFile(url, function(err, data){
-    console.log(data);
-    res.send(200, data);
-  });
-  // res.redirect('/../client/index.html');
-});
+app.get('/', function(req, res){ utils.loadClient(req, res, 'index.html'); });
+app.get('/lobby', function(req, res){ utils.loadClient(req, res, 'lobby.html'); });
+app.get('/login', function(req, res){ utils.loadClient(req, res, 'login.html'); });
+app.get('/game', function(req, res){ utils.loadClient(req, res, 'game.html'); });
 
 var userSockets = {};
 var count = 0;
 
+var shuffle = function(o){
+    for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+    return o;
+};
+
 io.sockets.on('connection', function(socket){
+
+  var players = {};
+  var playersArr = [];
+  var genCharacter = function(){
+    return shuffle(['merlin', 'percival', 'warrior', 'mordred', 'villain', 'villain']);
+  };
+
+  var startGame = function(){
+    console.log('start game');
+    var characters = genCharacter();
+    var i = 0;
+    for(key in userSockets){
+      players[key] = {
+        name: key,
+        socket: userSockets[key],
+        character: characters[i]
+      };
+      playersArr.push(players[key]);
+      // console.log('Player ' + (i+1) + ' - ' + key + ', is ' + players[key]['character']);
+      i++;
+    }
+    sendIdentity();
+  };
+
+  var playerInfo = function(player){
+    return player.name + ' is ' + player.character + '\n';
+  };
+
+  var sendIdentity = function(){
+    for(var player in players){
+      console.log(player);
+      var info = {myself:{}, others:{}};
+      for(var key in players){
+        if(key === player){
+          info['myself'] = {
+            name: players[key]['name'],
+            socket: players[key]['socket'],
+            character: players[key]['character'],
+          }
+        }else{
+          info['others'][key] = {
+            name: players[key]['name'],
+            socket: players[key]['socket'],
+            character: players[key]['character'],
+          };
+        };
+      }
+      console.log(player);
+      for(var infoPlayer in info['others']){
+        if(players[player]['character'] === 'merlin' && 
+          info['others'][infoPlayer]['character'] !== 'villain'){
+          //case for merlin
+          info['others'][infoPlayer]['character'] = 'unknown';
+        }else if(players[player]['character'] === 'percival' &&
+          info['others'][infoPlayer]['character'] !== 'merlin'){
+          //case for percival
+          info['others'][infoPlayer]['character'] = 'unknown';
+        }else if((players[player]['character'] === 'villain' || players[player]['character'] === 'mordred') &&
+          info['others'][infoPlayer]['character'] !== 'villain' && info['others'][infoPlayer]['character'] !== 'mordred'){
+          //case for villain or mondred
+          info['others'][infoPlayer]['character'] = 'unknown';
+        }else if(players[player]['character'] === 'warrior'){
+          info['others'][infoPlayer]['character'] = 'unknown';
+        }
+      }
+      console.log('player data:');
+      console.log(players);
+      console.log('data for ' + player);
+      console.log(info);
+
+      io.sockets.socket(players[player]['socket']).emit('startGame', info);
+    }
+  };
+
+  // var voting = function(){
+  //   var pos = 0;
+  //   //kick start process
+  //   io.sockets.socket(playersArr[pos]['socket']).emit('chooseTeam');
+  //   io.sockets.socket.on('pickedTeam', function(){
+  //     //broadcast
+  //   });
+  // };
 
   console.log(socket.id);
 
@@ -64,6 +127,9 @@ io.sockets.on('connection', function(socket){
     count++;
     userSockets[username] = socket.id;
     io.sockets.emit('playerList', {users: userSockets});
+    if(count > 5){
+      startGame();
+    }
   });
 
   socket.on('logout', function (data) {

@@ -9,6 +9,10 @@ app.config(['$routeProvider', function($routeProvider){
   })
   .when('/lobby', {
     templateUrl: '/lobby',
+    controller: 'lobbyController'
+  })
+  .when('/game', {
+    templateUrl: '/game',
     controller: 'gameController'
   }).otherwise({redirectTo: '#'});
 }]);
@@ -17,6 +21,12 @@ app.config(['$routeProvider', function($routeProvider){
 app.factory('Users', ['$http', '$location', '$rootScope', function($http, $location, $rootScope){
   var _username = undefined;
   var _loggedin = false;
+  var myselfInfo = undefined;
+  var othersInfo = undefined;
+  var gameStatus = {
+    round: undefined,
+    results: []
+  };
   return {
     login: function(username){
       _username = username;
@@ -33,7 +43,28 @@ app.factory('Users', ['$http', '$location', '$rootScope', function($http, $locat
       $rootScope.socket.on('playerList', function(data){
         callback(data);
       });
+      $rootScope.socket.on('startGame', function(data){
+        console.log(data);
+        myselfInfo = data.myself;
+        othersInfo = data.others;
+        console.log(myselfInfo);
+        console.log(othersInfo);
+        $location.path('/login');
+      });
       // console.log('you\'re login, hahaha!jk');
+    },
+
+    //temp
+    // loadGame: function(){
+    //   console.log('here');
+    //   $location.path('/game');
+    // },
+
+    accessPlayerData: function(){
+      return {
+        myself: myselfInfo,
+        others: othersInfo
+      };
     },
 
     logout: function(){
@@ -53,7 +84,7 @@ app.controller('inputController', ['$scope', 'Users', function($scope, Users){
   };
 }]);
 
-app.controller('gameController', ['$scope', 'Users', function($scope, Users){
+app.controller('lobbyController', ['$scope', 'Users', function($scope, Users){
   Users.load(function(data){
     console.log(Object.keys(data.users));
     $scope.$apply(function(){
@@ -65,4 +96,16 @@ app.controller('gameController', ['$scope', 'Users', function($scope, Users){
     Users.logout();
   };
   // $scope.players = 'hehehe';
+}]);
+
+app.controller('gameController', ['$scope', 'Users', function($scope, Users){
+  console.log('here');
+  $scope.myself = Users.accessPlayerData()['myself'];
+  $scope.others = Users.accessPlayerData()['others'];
+}]);
+
+app.controller('voteController', ['$scope', 'Users', function($scope, Users){
+  console.log('here');
+  $scope.myself = Users.accessPlayerData()['myself'];
+  $scope.others = Users.accessPlayerData()['others'];
 }]);
