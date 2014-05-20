@@ -49,7 +49,7 @@ app.factory('Users', ['$http', '$location', '$rootScope', function($http, $locat
         othersInfo = data.others;
         console.log(myselfInfo);
         console.log(othersInfo);
-        $location.path('/login');
+        // $location.path('/login');
       });
       // console.log('you\'re login, hahaha!jk');
     },
@@ -84,12 +84,19 @@ app.controller('inputController', ['$scope', 'Users', function($scope, Users){
   };
 }]);
 
-app.controller('lobbyController', ['$scope', 'Users', function($scope, Users){
+app.controller('lobbyController', ['$rootScope', '$scope', 'Users', function($rootScope, $scope, Users){
+
+  //testing
+
+
   Users.load(function(data){
     console.log(Object.keys(data.users));
     $scope.$apply(function(){
       $scope.players = Object.keys(data.users);
     });
+  });
+  $rootScope.socket.on('testing', function(){
+    console.log('tested');
   });
   
   $scope.logout = function(){
@@ -98,14 +105,97 @@ app.controller('lobbyController', ['$scope', 'Users', function($scope, Users){
   // $scope.players = 'hehehe';
 }]);
 
-app.controller('gameController', ['$scope', 'Users', function($scope, Users){
+app.controller('gameController', ['$rootScope', '$scope', 'Users', function($rootScope, $scope, Users){
   console.log('here');
+  $scope.isLeader = false;
+  $scope.votingTime = false;
+  $scope.onMission = false;
+  $scope.succeededMissionCount = 0;
+  $scope.failedMissionCount = 0;
+  $scope.rejectedTeamCount = 0;
+
+  $rootScope.socket.on('updateMissionTally', function(data){
+    if(data.success){
+      $scope.succeededMissionCount++;
+    }else{
+      $scope.failedMissionCount++;
+    }
+  });
+
+  $rootScope.socket.on('updateTeamTally', function(data){
+    $scope.rejectedTeamCount = data.count;
+  });
+
+  $rootScope.socket.on('chooseTeam', function(){
+    console.log('you are leader!');
+    $scope.$apply(function(){
+      $scope.isLeader = true;
+      //to be refactored!
+      $rootScope.leaderDuties = {
+        pick: function(player){
+          console.log('pick');
+          $scope.leaderDuties.list.push(player);
+        },
+        unpick: function(player){
+          $scope.leaderDuties.list.splice($scope.leaderDuties.list.indexOf(player), 1);
+        },
+        sendTeam: function(){
+          $rootScope.socket.emit('pickedTeam', {team: $scope.leaderDuties.list});
+          $scope.isLeader = false;
+          $rootScope.leaderDuties = undefined;
+        },
+        list: []
+      };
+    });
+  });
+
+  $rootScope.socket.on('voteForTeam', function(data){
+    $scope.$apply(function(){
+      $scope.votingTime = true;
+      $scope.proposedTeam = data.team;
+      console.log($scope.proposedTeam);
+      //to be refactored!
+      $rootScope.voterDuties = {
+        approve: function(){
+          $rootScope.socket.emit('voted', {approve: true});
+          //
+          $scope.votingTime = false;
+          $rootScope.voterDuties = undefined;
+        },
+        reject: function(){
+          $rootScope.socket.emit('voted', {approve: false});
+          //
+          $scope.votingTime = false;
+          $rootScope.voterDuties = undefined;
+        }
+      }
+    });
+  });
+
+  $rootScope.socket.on('goOnMission', function(data){
+    console.log('go on mission!!!!');
+    $scope.$apply(function(){
+      $scope.onMission = true;
+      $rootScope.missionDuties = {
+        success: function(){
+          $rootScope.socket.emit('wentOnMission', {success: true});
+          $scope.onMission = false;
+          $rootScope.missionDuties = undefined;
+        },
+        fail: function(){
+          $rootScope.socket.emit('wentOnMission', {success: false});
+          $scope.onMission = false;
+          $rootScope.missionDuties = undefined;
+        }
+      }
+    });
+  });
+
+  $rootScope.socket.emit('readyGame');
   $scope.myself = Users.accessPlayerData()['myself'];
   $scope.others = Users.accessPlayerData()['others'];
 }]);
 
 app.controller('voteController', ['$scope', 'Users', function($scope, Users){
-  console.log('here');
-  $scope.myself = Users.accessPlayerData()['myself'];
-  $scope.others = Users.accessPlayerData()['others'];
+
 }]);

@@ -1,4 +1,9 @@
 <h1>Game on!</h1>
+<div>
+  <h3>Succeeded Mission: {{succeededMissionCount}}</h3>
+  <h3>Failed Mission: {{failedMissionCount}}</h3>
+  <h3>Rejected Team Tally: {{rejectedTeamCount}}</h3>
+</div>
 <div class='myself' ng-model='myself'>
   <p>You!</p>
   <p>{{myself.character}}</p>
@@ -6,5 +11,26 @@
 <div class='others' ng-repeat='player in others' class=''>
   <p>{{player.name}}</p>
   <p>{{player.character}}</p>
+  <button ng-show='isLeader' ng-click='leaderDuties.pick(player)'>Pick</button>
 </div>
+<div ng-show='isLeader'>
+  <h3>Team List</h3>
+  <p ng-repeat='member in leaderDuties.list'>{{member.name}}</p>
+</div>
+<button ng-show='isLeader' ng-click='leaderDuties.sendTeam()'>Send</button>
+
+<div ng-show='votingTime'>
+  <h3>Proposed Team</h3>
+  <p>{{proposedTeam}}</p>
+  <p ng-repeat='member in proposedTeam'>{{member.name}}</p>
+  <button ng-click='voterDuties.approve()'>Approve</button>
+  <button ng-click='voterDuties.reject()'>Reject</button>
+</div>
+
+<div ng-show='onMission'>
+  <h3>Your decision</h3>
+  <button ng-click='missionDuties.success()'>Success</button>
+  <button ng-click='missionDuties.fail()'>Fail</button>
+</div>
+
 <a href='#logout' ng-click='logout()'>Logout</a>
