@@ -115,15 +115,20 @@ app.controller('gameController', ['$rootScope', '$scope', 'Users', function($roo
   $scope.rejectedTeamCount = 0;
 
   $rootScope.socket.on('updateMissionTally', function(data){
-    if(data.success){
-      $scope.succeededMissionCount++;
-    }else{
-      $scope.failedMissionCount++;
-    }
+    $scope.$apply(function(){
+      console.log('update team tally');
+      if(data.success){
+        $scope.succeededMissionCount++;
+      }else{
+        $scope.failedMissionCount++;
+      }
+    });
   });
 
   $rootScope.socket.on('updateTeamTally', function(data){
-    $scope.rejectedTeamCount = data.count;
+    $scope.$apply(function(){  
+      $scope.rejectedTeamCount = data.count;
+    });
   });
 
   $rootScope.socket.on('chooseTeam', function(){
