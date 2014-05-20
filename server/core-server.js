@@ -42,6 +42,12 @@ var rejectVotes = 0;
 var pickedTeam = [];
 var pickedTeamName = [];
 
+var players = {};
+var playersArr = [];
+
+// setTimeout(function(){
+//   console.log(playersArr)
+// }, 10000);
 
 var shuffle = function(o){
     for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
@@ -68,18 +74,22 @@ io.sockets.on('connection', function(socket){
           if(fail > 0){
             failedMission++;
             console.log('mission failed');
-            io.sockets.emit('updateMissionTally', {success: false});
+            //###allSockets
+            allSockets.emit('updateMissionTally', {success: false});
           }else{
             succeededMission++;
             console.log('mission succeeded');
-            io.sockets.emit('updateMissionTally', {success: true});
+            //###allSockets
+            allSockets.emit('updateMissionTally', {success: true});
           }
 
           //Endgame check
           if(succeededMission > 2){
             //Good Wins!
+            console.log('good prevails!');
           }else if(failedMission > 2){
             //Evil Wins!
+            console.log('evil wins!');
           }
 
           missionNumber++;
@@ -116,17 +126,14 @@ io.sockets.on('connection', function(socket){
       }else{
         console.log('Team rejected: ' + approveVotes + ':' + rejectVotes);
         rejectedTeam++;
-        io.sockets.emit('updateTeamTally', {count: rejectedTeam});
+        //###allSockets
+        allSockets.emit('updateTeamTally', {count: rejectedTeam});
         leaderPos++;
         voting(leaderPos);
       }
     }
   });
   
-
-
-  var players = {};
-  var playersArr = [];
   var genCharacter = function(){
     return shuffle(['merlin', 'percival', 'warrior', 'mordred', 'villain', 'villain']);
   };
@@ -213,6 +220,8 @@ io.sockets.on('connection', function(socket){
     //WTF
     pickedTeam = [];
     pickedTeamName = [];
+    console.log(pickedTeam);
+    console.log(pickedTeamName);
     //kick start process, to be refactored!!!
     if(pos === 0){
       io.sockets.socket(playersArr[realPos]['socket']).on('readyGame', function(){
@@ -254,7 +263,9 @@ io.sockets.on('connection', function(socket){
       //   }
       // });
       //
-      io.sockets.emit('voteForTeam', {team: pickedTeamName});
+
+      //###allSockets
+      allSockets.emit('voteForTeam', {team: pickedTeamName});
     });
   };
 
@@ -264,7 +275,7 @@ io.sockets.on('connection', function(socket){
 
   socket.on('login', function(data){
     console.log('new player login');
-    allSockets.emit('testing');
+    // allSockets.emit('testing');
     console.log(data);
     var username = data.username;
     count++;
@@ -288,6 +299,7 @@ io.sockets.on('connection', function(socket){
   }, this);
 
   socket.on('disconnect', function(socket){
+    allSockets = io.sockets;
     console.log('disconnected');
   });
 

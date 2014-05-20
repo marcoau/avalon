@@ -95,9 +95,9 @@ app.controller('lobbyController', ['$rootScope', '$scope', 'Users', function($ro
       $scope.players = Object.keys(data.users);
     });
   });
-  $rootScope.socket.on('testing', function(){
-    console.log('tested');
-  });
+  // $rootScope.socket.on('testing', function(){
+  //   console.log('tested');
+  // });
   
   $scope.logout = function(){
     Users.logout();
@@ -134,13 +134,13 @@ app.controller('gameController', ['$rootScope', '$scope', 'Users', function($roo
       $rootScope.leaderDuties = {
         pick: function(player){
           console.log('pick');
-          $scope.leaderDuties.list.push(player);
+          $rootScope.leaderDuties.list.push(player);
         },
         unpick: function(player){
-          $scope.leaderDuties.list.splice($scope.leaderDuties.list.indexOf(player), 1);
+          $rootScope.leaderDuties.list.splice($rootScope.leaderDuties.list.indexOf(player), 1);
         },
         sendTeam: function(){
-          $rootScope.socket.emit('pickedTeam', {team: $scope.leaderDuties.list});
+          $rootScope.socket.emit('pickedTeam', {team: $rootScope.leaderDuties.list});
           $scope.isLeader = false;
           $rootScope.leaderDuties = undefined;
         },
